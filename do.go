@@ -64,11 +64,13 @@ func (d *DO) UseDB(db *gorm.DB, opts ...DOOption) {
 }
 
 // ReplaceDB replace db connection
-func (d *DO) ReplaceDB(db *gorm.DB) { d.db = db }
+func (d *DO) ReplaceDB(db *gorm.DB) {
+	d.db = db.Session(&gorm.Session{})
+}
 
 // ReplaceConnPool replace db connection pool
 func (d *DO) ReplaceConnPool(pool gorm.ConnPool) {
-	d.db = d.db.Session(&gorm.Session{Initialized: true})
+	d.db = d.db.Session(&gorm.Session{Initialized: true}).Session(&gorm.Session{})
 	d.db.Statement.ConnPool = pool
 }
 
@@ -254,11 +256,16 @@ func (d *DO) Order(columns ...field.Expr) Dao {
 
 func (d *DO) toOrderValue(columns ...field.Expr) string {
 	// eager build Columns
-	orderArray := make([]string, len(columns))
+	stmt := &gorm.Statement{DB: d.db.Statement.DB, Table: d.db.Statement.Table, Schema: d.db.Statement.Schema}
+
 	for i, c := range columns {
-		orderArray[i] = c.Build(d.db.Statement).String()
+		if i != 0 {
+			stmt.WriteByte(',')
+		}
+		c.Build(stmt)
 	}
-	return strings.Join(orderArray, ",")
+
+	return stmt.SQL.String()
 }
 
 // Distinct ...
@@ -279,11 +286,17 @@ func (d *DO) Group(columns ...field.Expr) Dao {
 	if len(columns) == 0 {
 		return d
 	}
-	name := string(columns[0].Build(d.db.Statement))
-	for _, col := range columns[1:] {
-		name += "," + string(col.Build(d.db.Statement))
+
+	stmt := &gorm.Statement{DB: d.db.Statement.DB, Table: d.db.Statement.Table, Schema: d.db.Statement.Schema}
+
+	for i, c := range columns {
+		if i != 0 {
+			stmt.WriteByte(',')
+		}
+		c.Build(stmt)
 	}
-	return d.getInstance(d.db.Group(name))
+
+	return d.getInstance(d.db.Group(stmt.SQL.String()))
 }
 
 // Having ...

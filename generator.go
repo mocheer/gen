@@ -3,6 +3,7 @@ package gen
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -32,6 +33,15 @@ type T interface{}
 
 // M map[string]interface{}
 type M map[string]interface{}
+
+// SQLResult sql.result
+type SQLResult sql.Result
+
+// SQLRow sql.Row
+type SQLRow sql.Row
+
+// SQLRows sql.Rows
+type SQLRows sql.Rows
 
 // RowsAffected execute affected raws
 type RowsAffected int64
@@ -200,12 +210,12 @@ func (g *Generator) genModelObjConfig() *model.Config {
 	}
 }
 
-// ApplyBasic specify models which will implement basic method
+// ApplyBasic specify models which will implement basic .diy_method
 func (g *Generator) ApplyBasic(models ...interface{}) {
 	g.ApplyInterface(func() {}, models...)
 }
 
-// ApplyInterface specifies method interfaces on structures, implment codes will be generated after calling g.Execute()
+// ApplyInterface specifies .diy_method interfaces on structures, implment codes will be generated after calling g.Execute()
 // eg: g.ApplyInterface(func(model.Method){}, model.User{}, model.Company{})
 func (g *Generator) ApplyInterface(fc interface{}, models ...interface{}) {
 	structs, err := generate.ConvertStructs(g.db, models...)
@@ -514,15 +524,15 @@ func (g *Generator) generateModelFile() error {
 }
 
 func (g *Generator) getModelOutputPath() (outPath string, err error) {
-	if strings.Contains(g.ModelPkgPath, "/") {
+	if strings.Contains(g.ModelPkgPath, string(os.PathSeparator)) {
 		outPath, err = filepath.Abs(g.ModelPkgPath)
 		if err != nil {
 			return "", fmt.Errorf("cannot parse model pkg path: %w", err)
 		}
 	} else {
-		outPath = filepath.Dir(g.OutPath) + "/" + g.ModelPkgPath
+		outPath = filepath.Join(filepath.Dir(g.OutPath), g.ModelPkgPath)
 	}
-	return outPath + "/", nil
+	return outPath + string(os.PathSeparator), nil
 }
 
 func (g *Generator) fillModelPkgPath(filePath string) {
