@@ -3,6 +3,7 @@ package template
 const (
 	// TableQueryStruct table query struct
 	TableQueryStruct = createMethod + `
+	{{.QueryStructComment}}
 	type {{.QueryStructName}} struct {
 		{{.QueryStructName}}Do
 		` + fields + `
@@ -11,6 +12,7 @@ const (
 
 	// TableQueryStructWithContext table query struct with context
 	TableQueryStructWithContext = createMethod + `
+	{{.QueryStructComment}}
 	type {{.QueryStructName}} struct {
 		{{.QueryStructName}}Do {{.QueryStructName}}Do
 		` + fields + `
@@ -22,6 +24,8 @@ const (
 	func ({{.S}} {{.QueryStructName}}) TableName() string { return {{.S}}.{{.QueryStructName}}Do.TableName() } 
 
 	func ({{.S}} {{.QueryStructName}}) Alias() string { return {{.S}}.{{.QueryStructName}}Do.Alias() }
+
+	func ({{.S}} {{.QueryStructName}}) Columns(cols ...field.Expr) gen.Columns { return {{.S}}.{{.QueryStructName}}Do.Columns(cols...) }
 
 	` + getFieldMethod + fillFieldMapMethod + cloneMethod + replaceMethod + relationship + defineMethodStruct
 
@@ -234,6 +238,11 @@ func (a {{$.QueryStructName}}{{$relationship}}{{$relation.Name}}) Where(conds ..
 
 func (a {{$.QueryStructName}}{{$relationship}}{{$relation.Name}}) WithContext(ctx context.Context) *{{$.QueryStructName}}{{$relationship}}{{$relation.Name}} {
 	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a {{$.QueryStructName}}{{$relationship}}{{$relation.Name}}) Session(session *gorm.Session) *{{$.QueryStructName}}{{$relationship}}{{$relation.Name}} {
+	a.db = a.db.Session(session)
 	return &a
 }
 

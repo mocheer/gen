@@ -73,10 +73,6 @@ func ({{.S}} {{.QueryStructName}}Do) Where(conds ...gen.Condition) {{.ReturnObje
 	return {{.S}}.withDO({{.S}}.DO.Where(conds...))
 }
 
-func ({{.S}} {{.QueryStructName}}Do) Exists(subquery interface{UnderlyingDB() *gorm.DB}) {{.ReturnObject}} {
-	return {{.S}}.Where(field.CompareSubQuery(field.ExistsOp, nil, subquery.UnderlyingDB()))
-}
-
 func ({{.S}} {{.QueryStructName}}Do) Order(conds ...field.Expr) {{.ReturnObject}} {
 	return {{.S}}.withDO({{.S}}.DO.Order(conds...))
 }
@@ -378,7 +374,7 @@ func Test_{{.QueryStructName}}Query(t *testing.T) {
 	}
 	
 	var _a _another
-	var _aPK = field.NewString(_a.TableName(), clause.PrimaryKey)
+	var _aPK = field.NewString(_a.TableName(), "id")
 
 	err = _do.Join(&_a, primaryKey.EqCol(_aPK)).Scan(map[string]interface{}{})
 	if err != nil {
