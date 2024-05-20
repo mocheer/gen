@@ -52,52 +52,69 @@ func (g *Generator) GetModels() map[string]*generate.QueryStructMeta {
 
 // BelongsTo
 func (g *Generator) BelongsTo(fieldName string, tableName string) model.CreateFieldOpt {
+	tag := field.GormTag{}
+	tag.Set("foreignKey", fmt.Sprintf("%s_id", tableName))
 	return FieldRelate(field.BelongsTo, fieldName, g.BuildModel(tableName), &field.RelateConfig{
 		RelatePointer: true,
-		GORMTag:       fmt.Sprintf("foreignKey:%s_id", tableName),
+		GORMTag:       tag,
 	})
 }
 
 // HasOne
 func (g *Generator) HasOne(fieldName string, tableName string) model.CreateFieldOpt {
+	tag := field.GormTag{}
+	tag.Set("foreignKey", "id")
 	return FieldRelate(field.HasOne, fieldName, g.BuildModel(tableName), &field.RelateConfig{
 		RelatePointer: true,
-		GORMTag:       "foreignKey:id",
+		GORMTag:       tag,
 	})
 }
 
 // HasMany
 func (g *Generator) HasMany(fieldName string, tableName string) model.CreateFieldOpt {
+	tag := field.GormTag{}
+	tag.Set("foreignKey", "id")
 	return FieldRelate(field.HasMany, fieldName, g.BuildModel(tableName), &field.RelateConfig{
 		RelateSlicePointer: true,
-		GORMTag:            "foreignKey:id",
+		GORMTag:            tag,
 	})
 }
 
 // HasTree 用于一对多的关联配置，以pid为外键进行关联，构建成 {items:[{items:...,nodes:[]}],nodes:[]}
 func (g *Generator) HasTree(fieldName string, tableName string) model.CreateFieldOpt {
+	tag := field.GormTag{}
+	tag.Set("foreignKey", "pid")
+	tag.Set("references", "id")
 	return FieldRelate(field.HasMany, fieldName, g.BuildModel(tableName), &field.RelateConfig{
 		RelateSlicePointer: true,
-		GORMTag:            "foreignKey:pid;references:id",
+		GORMTag:            tag,
 	})
 }
 
 // HasTreeByParentID
 func (g *Generator) HasTreeByParentID(fieldName string, tableName string) model.CreateFieldOpt {
+	tag := field.GormTag{}
+	tag.Set("foreignKey", "parent_id")
+	tag.Set("references", "id")
 	return FieldRelate(field.HasMany, fieldName, g.BuildModel(tableName), &field.RelateConfig{
 		RelateSlicePointer: true,
-		GORMTag:            "foreignKey:parent_id;references:id",
+		GORMTag:            tag,
 	})
 }
 
-// HasData
-func (g *Generator) HasData(fieldName string, typeName string) model.CreateFieldOpt {
+// HasColumn
+func (g *Generator) HasColumn(fieldName string, typeName string) model.CreateFieldOpt {
+	tag := field.Tag{}
+	tag.Set("json", ns.ColumnName("", fieldName))
+
+	tag2 := field.GormTag{}
+	tag2.Set("-", "")
 	return func(*model.Field) *model.Field {
 		return &model.Field{
 			Name:    fieldName,
 			Type:    typeName,
-			JSONTag: ns.ColumnName("", fieldName),
-			GORMTag: "-",
+			Tag:     tag,
+			GORMTag: tag2,
 			// NewTag:       config.NewTag,
 			// OverwriteTag: config.OverwriteTag,
 		}
